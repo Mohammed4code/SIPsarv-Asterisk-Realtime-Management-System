@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة جهات اتصال Asterisk</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="web/css/style.css">
+</head>
+<body>
+       <div class="container">
+        <div class="card">
+            <!-- الهيدر -->
+            <div class="header">
+                <i class="fas fa-address-book header-icon"></i>
+                <h1>إدارة جهات الاتصال</h1>
+                <div class="header-badges">
+                    <span class="badge badge-go"><i class="fab fa-golang"></i> Go</span>
+                    <span class="badge badge-asterisk"><i class="fas fa-phone"></i> Asterisk</span>
+                    <span class="badge badge-status" id="asteriskStatusBadge">
+                        <i class="fas fa-circle"></i> جاري الفحص...
+                    </span>
+                </div>
+                <button type="button" class="btn btn-primary" id="showExtensionsBtn" style="margin-right:auto;">
+                    <i class="fas fa-list-ol"></i> عرض الامتدادات
+                </button>
+            </div>
+
+            <form id="contactForm" onsubmit="return false;">
+                <div class="form-grid">
+                    <!-- حالة الخادم -->
+                    <div class="server-status">
+                        <span class="dot" id="serverDot"></span>
+                        <span class="status-text" id="serverStatusText">جاري الاتصال بـ Go Server...</span>
+                        <button type="button" class="refresh-btn" id="refreshStatus" title="تحديث الحالة">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+
+                    <!-- الاسم الكامل -->
+                    <div class="field-group full-width">
+                        <label><i class="fas fa-user"></i> الاسم الكامل <span class="required">*</span></label>
+                        <input type="text" placeholder="مثال: أحمد محمد عبد الله" id="fullName">
+                        <div class="hint"><i class="fas fa-info-circle"></i> ثلاثي أو رباعي</div>
+                    </div>
+
+                    <!-- رقم الجواز + السكن -->
+                    <div class="field-group full-width">
+                        <div class="inline-group">
+                            <div class="field-group">
+                                <label><i class="fas fa-passport"></i> رقم الجواز <span class="required">*</span></label>
+                                <div class="input-icon-wrapper">
+                                    <i class="fas fa-globe"></i>
+                                    <input type="text" placeholder="A1234567" id="passport">
+                                </div>
+                            </div>
+                            <div class="field-group">
+                                <label><i class="fas fa-home"></i> السكن / العنوان</label>
+                                <input type="text" placeholder="المدينة - المنطقة" id="address">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- رقم الهاتف + PIN -->
+                    <div class="field-group">
+                        <label><i class="fas fa-phone-alt"></i> رقم الهاتف <span class="required">*</span></label>
+                        <input type="tel" placeholder="05xxxxxxxx" id="phoneNumber">
+                        <div class="hint"><i class="fas fa-mobile-alt"></i> رقم SIP/IAX2</div>
+                    </div>
+
+                    <div class="field-group">
+                        <label><i class="fas fa-lock"></i> PIN <span class="required">*</span></label>
+                        <input type="password" placeholder="****" maxlength="8" id="pinCode">
+                        <div class="hint"><i class="fas fa-key"></i> 4-8 أرقام</div>
+                    </div>
+
+                    <!-- SIP Username + Secret -->
+                    <div class="field-group">
+                        <label><i class="fas fa-user-tag"></i> SIP Username <span class="required">*</span></label>
+                        <input type="text" placeholder="sip_username" id="sipUsername">
+                        <div class="hint"><i class="fas fa-at"></i> معرف SIP</div>
+                    </div>
+
+                    <div class="field-group">
+                        <label><i class="fas fa-lock-open"></i> SIP Secret</label>
+                        <input type="text" placeholder="كلمة المرور" id="sipSecret">
+                        <div class="hint"><i class="fas fa-shield-alt"></i> كلمة مرور SIP</div>
+                    </div>
+
+
+                    <!-- البريد الإلكتروني -->
+                    <div class="field-group full-width">
+                        <label><i class="fas fa-envelope"></i> البريد الإلكتروني</label>
+                        <input type="email" placeholder="example@domain.com" id="email">
+                        <div class="hint"><i class="fas fa-at"></i> للإشعارات (اختياري)</div>
+                    </div>
+
+                    <!-- إعدادات Asterisk -->
+                    <div class="section-title"><i class="fas fa-server"></i> إعدادات الاتصال بـ Asterisk</div>
+
+                    <div class="field-group">
+                        <label><i class="fas fa-code-branch"></i> نوع الاتصال</label>
+                        <select id="connectionType">
+                            <option value="sip" selected>SIP</option>
+                            <option value="iax2">IAX2</option>
+                            <option value="pjsip">PJSIP</option>
+                        </select>
+                    </div>
+
+                    <div class="field-group">
+                        <label><i class="fas fa-clock"></i> مهلة التسجيل</label>
+                        <input type="number" placeholder="ثانية" value="120" id="regTimeout">
+                        <div class="hint"><i class="fas fa-hourglass-half"></i> Register timeout</div>
+                    </div>
+
+                    <div class="field-group full-width">
+                        <label><i class="fas fa-sticky-note"></i> ملاحظات إضافية</label>
+                        <input type="text" placeholder="مثل: context, callerid, إلخ" id="asteriskNotes">
+                        <div class="hint"><i class="fas fa-terminal"></i> إعدادات إضافية لـ Asterisk</div>
+                    </div>
+
+                    <!-- إعدادات خادم Asterisk -->
+                    <div class="section-title"><i class="fas fa-server"></i> إعدادات خادم Asterisk</div>
+
+                    <div class="field-group full-width">
+                        <div class="inline-group">
+                            <div class="field-group">
+                                <label><i class="fas fa-network-wired"></i> عنوان الخادم <span class="required">*</span></label>
+                                <div class="input-icon-wrapper">
+                                    <i class="fas fa-globe"></i>
+                                    <input type="text" placeholder="192.168.8.24" id="asteriskHost">
+                                </div>
+                                <div class="hint"><i class="fas fa-info-circle"></i> IP أو Domain</div>
+                            </div>
+                            <div class="field-group">
+                                <label><i class="fas fa-plug"></i> المنفذ</label>
+                                <input type="text" placeholder="5038" id="asteriskPort">
+                                <div class="hint"><i class="fas fa-info-circle"></i> منفذ AMI</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="field-group full-width">
+                        <div class="inline-group">
+                            <div class="field-group">
+                                <label><i class="fas fa-user"></i> اسم المستخدم</label>
+                                <input type="text" placeholder="admin" id="amiUser">
+                                <div class="hint"><i class="fas fa-info-circle"></i> مستخدم AMI</div>
+                            </div>
+                            <div class="field-group">
+                                <label><i class="fas fa-key"></i> كلمة المرور</label>
+                                <input type="password" placeholder="********" id="amiPassword">
+                                <div class="hint"><i class="fas fa-info-circle"></i> كلمة مرور AMI</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="field-group full-width">
+                        <button type="button" class="btn btn-primary" id="updateConfigBtn" style="width:100%;justify-content:center;">
+                            <i class="fas fa-save"></i> تحديث إعدادات Asterisk
+                        </button>
+                    </div>
+
+                    <!-- الأزرار -->
+                    <div class="action-buttons">
+                        <button type="reset" class="btn btn-secondary"><i class="fas fa-undo-alt"></i> إعادة تعيين</button>
+                        <button type="button" class="btn btn-success" id="addToAsteriskBtn">
+                            <i class="fas fa-database"></i> إضافة إلى Asterisk
+                        </button>
+                        <button type="button" class="btn btn-primary" id="saveContactBtn">
+                            <i class="fas fa-save"></i> حفظ جهة الاتصال
+                        </button>
+                    </div>
+
+                    <!-- رسالة -->
+                    <div id="toast" class="toast">
+                        <i class="fas fa-info-circle"></i>
+                        <span id="toastMessage">رسالة</span>
+                    </div>
+
+                    <!-- قائمة جهات الاتصال -->
+                    <div class="contacts-list">
+                        <h3><i class="fas fa-list"></i> جهات الاتصال المحفوظة</h3>
+                        <div id="contactsContainer">
+                            <div class="no-contacts">📭 لا توجد جهات اتصال محفوظة</div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ── نافذة عرض الامتدادات ───────────────────────────────────── -->
+    <div id="extensionsOverlay" class="ext-overlay">
+        <div class="ext-modal">
+            <div class="ext-modal-header">
+                <h2><i class="fas fa-list-ol"></i> الامتدادات المسجّلة في Asterisk</h2>
+                <button type="button" id="closeExtensionsBtn" class="ext-close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="ext-modal-toolbar">
+                <button type="button" id="refreshExtensionsBtn" class="btn btn-primary">
+                    <i class="fas fa-sync-alt"></i> تحديث
+                </button>
+                <span id="extensionsCount" class="ext-count"></span>
+            </div>
+            <div id="extensionsContainer" class="ext-modal-body">
+                <div class="no-contacts">⏳ جاري التحميل...</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="web/js/app.js"></script>
+</body>
+</html>
